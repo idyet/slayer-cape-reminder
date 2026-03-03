@@ -8,10 +8,12 @@ import net.runelite.api.GameState;
 import net.runelite.api.InventoryID;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.ItemID;
+import net.runelite.api.Skill;
 import net.runelite.api.VarPlayer;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.ItemContainerChanged;
+import net.runelite.api.events.StatChanged;
 import net.runelite.api.events.VarbitChanged;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
@@ -20,6 +22,7 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.Text;
+import net.runelite.client.plugins.slayer.SlayerPlugin;
 
 @Slf4j
 @PluginDescriptor(
@@ -46,12 +49,16 @@ public class SlayerCapeReminderPlugin extends Plugin
 	// Package-private so the overlay can read them directly.
 	boolean capePresent = true;
 	boolean taskComplete = false;
+	boolean isLevel99 = false;
 
 	@Override
 	protected void startUp()
 	{
 		overlayManager.add(overlay);
-		clientThread.invokeLater(this::updateCapePresence);
+		clientThread.invokeLater(() -> {
+			updateCapePresence();
+			updateSlayerLevel();
+		});
 		log.debug("SlayerCapeReminderPlugin started");
 	}
 
@@ -61,6 +68,7 @@ public class SlayerCapeReminderPlugin extends Plugin
 		overlayManager.remove(overlay);
 		capePresent = true;
 		taskComplete = false;
+		isLevel99 = false;
 		log.debug("SlayerCapeReminderPlugin stopped");
 	}
 
@@ -118,6 +126,20 @@ public class SlayerCapeReminderPlugin extends Plugin
 			capePresent = true;
 			taskComplete = false;
 		}
+	}
+
+	@Subscribe
+	public void onStatChanged(StatChanged event)
+	{
+		if (event.getSkill() == Skill.SLAYER)
+		{
+			updateSlayerLevel();
+		}
+	}
+
+	private void updateSlayerLevel()
+	{
+		isLevel99 = client.getRealSkillLevel(Skill.SLAYER) >= 99;
 	}
 
 	private void updateCapePresence()

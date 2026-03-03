@@ -62,4 +62,15 @@ public interface SlayerCapeReminderConfig extends Config
 	{
 		return new Color(150, 0, 0, 156);
 	}
+
+	@ConfigItem(
+		keyName = "onlyAt99",
+		name = "Only at 99 Slayer",
+		description = "Only show the overlay if you have 99 Slayer.",
+		position = 5
+	)
+	default boolean onlyAt99()
+	{
+		return true;
+	}
 }
