@@ -12,10 +12,21 @@ import net.runelite.client.config.Units;
 public interface SlayerCapeReminderConfig extends Config
 {
 	@ConfigItem(
+		keyName = "onlyAt99",
+		name = "Only at 99 Slayer",
+		description = "Only show the overlay if you have 99 Slayer.",
+		position = 0
+	)
+	default boolean onlyAt99()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 		keyName = "reminderText",
 		name = "Reminder text",
 		description = "Text displayed in the overlay when your Slayer Cape is absent.",
-		position = 0
+		position = 1
 	)
 	default String reminderText()
 	{
@@ -26,7 +37,7 @@ public interface SlayerCapeReminderConfig extends Config
 		keyName = "warningColor",
 		name = "Text color",
 		description = "Color of the reminder text.",
-		position = 1
+		position = 2
 	)
 	default Color warningColor()
 	{
@@ -37,7 +48,7 @@ public interface SlayerCapeReminderConfig extends Config
 		keyName = "backgroundColor",
 		name = "Background color",
 		description = "Color of the overlay box background.",
-		position = 2
+		position = 3
 	)
 	default Color backgroundColor()
 	{
@@ -48,7 +59,7 @@ public interface SlayerCapeReminderConfig extends Config
 		keyName = "flashEnabled",
 		name = "Flash background",
 		description = "Flashes the overlay background between the background color and the flash color.",
-		position = 3
+		position = 4
 	)
 	default boolean flashEnabled()
 	{
@@ -59,30 +70,32 @@ public interface SlayerCapeReminderConfig extends Config
 		keyName = "flashColor",
 		name = "Flash color",
 		description = "Second background color used when flashing is enabled.",
-		position = 4
+		position = 5
 	)
 	default Color flashColor()
 	{
 		return new Color(150, 0, 0, 156);
 	}
 
+	@ConfigItem(
+		keyName = "dismissDelay",
+		name = "Auto-dismiss delay",
+		description = "Seconds before the overlay automatically hides after a task is completed. Set to 0 to never auto-dismiss.",
+		position = 6
+	)
+	@Range(min = 0)
+	@Units(Units.SECONDS)
+	default int dismissDelay()
+	{
+		return 120;
+	}
+
 	@ConfigSection(
 		name = "Proximity Alert",
 		description = "Show the overlay when approaching a slayer master without your cape and without an active task.",
-		position = 5
+		position = 7
 	)
 	String proximitySection = "proximitySection";
-
-	@ConfigItem(
-		keyName = "onlyAt99",
-		name = "Only at 99 Slayer",
-		description = "Only show the overlay if you have 99 Slayer.",
-		position = 6
-	)
-	default boolean onlyAt99()
-	{
-		return true;
-	}
 
 	@ConfigItem(
 		keyName = "proximityDuradel",
@@ -130,18 +143,5 @@ public interface SlayerCapeReminderConfig extends Config
 	default boolean proximityKrystilia()
 	{
 		return true;
-	}
-
-	@ConfigItem(
-		keyName = "dismissDelay",
-		name = "Auto-dismiss delay",
-		description = "Seconds before the overlay automatically hides after a task is completed. Set to 0 to never auto-dismiss.",
-		position = 6
-	)
-	@Range(min = 0)
-	@Units(Units.SECONDS)
-	default int dismissDelay()
-	{
-		return 120;
 	}
 }
