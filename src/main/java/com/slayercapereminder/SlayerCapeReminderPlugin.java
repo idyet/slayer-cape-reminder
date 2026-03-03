@@ -5,11 +5,8 @@ import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
-import net.runelite.api.InventoryID;
 import net.runelite.api.ItemContainer;
-import net.runelite.api.ItemID;
 import net.runelite.api.Skill;
-import net.runelite.api.VarPlayer;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameStateChanged;
@@ -17,6 +14,9 @@ import net.runelite.api.events.GameTick;
 import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.api.events.StatChanged;
 import net.runelite.api.events.VarbitChanged;
+import net.runelite.api.gameval.InventoryID;
+import net.runelite.api.gameval.ItemID;
+import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -24,7 +24,6 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.Text;
-import net.runelite.client.plugins.slayer.SlayerPlugin;
 
 @Slf4j
 @PluginDescriptor(
@@ -68,7 +67,7 @@ public class SlayerCapeReminderPlugin extends Plugin
 		clientThread.invokeLater(() -> {
 			updateCapePresence();
 			updateSlayerLevel();
-			hasActiveTask = client.getVarpValue(VarPlayer.SLAYER_TASK_SIZE) > 0;
+			hasActiveTask = client.getVarpValue(VarPlayerID.SLAYER_COUNT) > 0;
 		});
 		log.debug("SlayerCapeReminderPlugin started");
 	}
@@ -148,7 +147,7 @@ public class SlayerCapeReminderPlugin extends Plugin
 	@Subscribe
 	public void onVarbitChanged(VarbitChanged event)
 	{
-		if (event.getVarpId() != VarPlayer.SLAYER_TASK_SIZE)
+		if (event.getVarpId() != VarPlayerID.SLAYER_COUNT)
 		{
 			return;
 		}
@@ -167,7 +166,7 @@ public class SlayerCapeReminderPlugin extends Plugin
 	public void onItemContainerChanged(ItemContainerChanged event)
 	{
 		int id = event.getContainerId();
-		if (id == InventoryID.INVENTORY.getId() || id == InventoryID.EQUIPMENT.getId())
+		if (id == InventoryID.INV || id == InventoryID.WORN)
 		{
 			updateCapePresence();
 		}
@@ -202,13 +201,13 @@ public class SlayerCapeReminderPlugin extends Plugin
 
 	private void updateCapePresence()
 	{
-		ItemContainer inventory = client.getItemContainer(InventoryID.INVENTORY);
-		ItemContainer equipment = client.getItemContainer(InventoryID.EQUIPMENT);
+		ItemContainer inventory = client.getItemContainer(InventoryID.INV);
+		ItemContainer equipment = client.getItemContainer(InventoryID.WORN);
 
 		boolean inInventory = inventory != null
-			&& (inventory.contains(ItemID.SLAYER_CAPE) || inventory.contains(ItemID.SLAYER_CAPET));
+			&& (inventory.contains(ItemID.SKILLCAPE_SLAYER) || inventory.contains(ItemID.SKILLCAPE_SLAYER_TRIMMED));
 		boolean equipped = equipment != null
-			&& (equipment.contains(ItemID.SLAYER_CAPE) || equipment.contains(ItemID.SLAYER_CAPET));
+			&& (equipment.contains(ItemID.SKILLCAPE_SLAYER) || equipment.contains(ItemID.SKILLCAPE_SLAYER_TRIMMED));
 
 		capePresent = inInventory || equipped;
 	}
