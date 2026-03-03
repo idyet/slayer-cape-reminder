@@ -10,8 +10,10 @@ import net.runelite.api.ItemContainer;
 import net.runelite.api.ItemID;
 import net.runelite.api.Skill;
 import net.runelite.api.VarPlayer;
+import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameStateChanged;
+import net.runelite.api.events.GameTick;
 import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.api.events.StatChanged;
 import net.runelite.api.events.VarbitChanged;
@@ -33,6 +35,7 @@ import net.runelite.client.plugins.slayer.SlayerPlugin;
 public class SlayerCapeReminderPlugin extends Plugin
 {
 	static final String TASK_COMPLETE_MESSAGE = "return to a Slayer master";
+	private static final int PROXIMITY_DISTANCE = 16;
 
 	@Inject
 	private Client client;
@@ -46,10 +49,17 @@ public class SlayerCapeReminderPlugin extends Plugin
 	@Inject
 	private SlayerCapeReminderOverlay overlay;
 
+	@Inject
+	private SlayerCapeReminderConfig config;
+
 	// Package-private so the overlay can read them directly.
 	boolean capePresent = true;
 	boolean taskComplete = false;
 	boolean isLevel99 = false;
+	boolean nearSlayerMaster = false;
+	boolean hasActiveTask = false;
+
+	private long taskCompleteTime = 0;
 
 	@Override
 	protected void startUp()
@@ -58,6 +68,7 @@ public class SlayerCapeReminderPlugin extends Plugin
 		clientThread.invokeLater(() -> {
 			updateCapePresence();
 			updateSlayerLevel();
+			hasActiveTask = client.getVarpValue(VarPlayer.SLAYER_TASK_SIZE) > 0;
 		});
 		log.debug("SlayerCapeReminderPlugin started");
 	}
@@ -69,6 +80,8 @@ public class SlayerCapeReminderPlugin extends Plugin
 		capePresent = true;
 		taskComplete = false;
 		isLevel99 = false;
+		nearSlayerMaster = false;
+		hasActiveTask = false;
 		log.debug("SlayerCapeReminderPlugin stopped");
 	}
 
@@ -89,7 +102,47 @@ public class SlayerCapeReminderPlugin extends Plugin
 		if (message.contains(TASK_COMPLETE_MESSAGE))
 		{
 			taskComplete = true;
+			taskCompleteTime = System.currentTimeMillis();
 		}
+	}
+
+	@Subscribe
+	public void onGameTick(GameTick event)
+	{
+		updateNearSlayerMaster();
+
+		if (!taskComplete)
+		{
+			return;
+		}
+
+		int delay = config.dismissDelay();
+		if (delay > 0 && System.currentTimeMillis() - taskCompleteTime >= delay * 1000L)
+		{
+			taskComplete = false;
+		}
+	}
+
+	private void updateNearSlayerMaster()
+	{
+		if (client.getLocalPlayer() == null)
+		{
+			nearSlayerMaster = false;
+			return;
+		}
+
+		WorldPoint player = client.getLocalPlayer().getWorldLocation();
+
+		nearSlayerMaster =
+			(config.proximityDuradel() && isNearMaster(player, SlayerMaster.DURADEL.getLocation())) ||
+			(config.proximityNieve() && isNearMaster(player, SlayerMaster.NIEVE.getLocation())) ||
+			(config.proximityKonar() && isNearMaster(player, SlayerMaster.KONAR.getLocation())) ||
+			(config.proximityKrystilia() && isNearMaster(player, SlayerMaster.KRYSTILIA.getLocation()));
+	}
+
+	private boolean isNearMaster(WorldPoint player, WorldPoint master)
+	{
+		return player.distanceTo2D(master) <= PROXIMITY_DISTANCE;
 	}
 
 	@Subscribe
@@ -100,7 +153,10 @@ public class SlayerCapeReminderPlugin extends Plugin
 			return;
 		}
 
-		if (event.getValue() > 0)
+		int newSize = event.getValue();
+		hasActiveTask = newSize > 0;
+
+		if (newSize > 0)
 		{
 			// New task assigned — hide the reminder.
 			taskComplete = false;
@@ -125,6 +181,8 @@ public class SlayerCapeReminderPlugin extends Plugin
 		{
 			capePresent = true;
 			taskComplete = false;
+			nearSlayerMaster = false;
+			hasActiveTask = false;
 		}
 	}
 

@@ -23,7 +23,10 @@ public class SlayerCapeReminderOverlay extends OverlayPanel
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		if (plugin.capePresent || !plugin.taskComplete || (config.onlyAt99() && !plugin.isLevel99))
+		boolean levelOk = !config.onlyAt99() || plugin.isLevel99;
+		boolean proximityTrigger = plugin.nearSlayerMaster && !plugin.hasActiveTask;
+
+		if (plugin.capePresent || !levelOk || (!plugin.taskComplete && !proximityTrigger))
 		{
 			return null;
 		}
